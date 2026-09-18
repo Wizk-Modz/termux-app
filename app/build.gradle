@@ -45,7 +45,7 @@ android {
     }
 
     defaultConfig {
-        applicationId "com.termux"
+        applicationId "com.wizk"
         minSdk buildMinSdk
         targetSdk buildTargetSdk
         versionCode 1022
@@ -62,8 +62,8 @@ android {
                 project.ext.bootstrapMaxRelease ? "\"" + project.ext.bootstrapMaxRelease + "\"" : "null"
         buildConfigField "String", "TERMUX_PACKAGE_VARIANT", "\"" + project.ext.packageVariant + "\"" // Used by TermuxApplication class
 
-        manifestPlaceholders.TERMUX_PACKAGE_NAME = "com.termux"
-        manifestPlaceholders.TERMUX_APP_NAME = "Termux"
+        manifestPlaceholders.TERMUX_PACKAGE_NAME = "com.wizk"
+        manifestPlaceholders.TERMUX_APP_NAME = "WizkTerm"
         manifestPlaceholders.TERMUX_API_APP_NAME = "Termux:API"
         manifestPlaceholders.TERMUX_BOOT_APP_NAME = "Termux:Boot"
         manifestPlaceholders.TERMUX_FLOAT_APP_NAME = "Termux:Float"
