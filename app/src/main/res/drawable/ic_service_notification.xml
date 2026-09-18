@@ -4,21 +4,25 @@
     android:viewportWidth="24"
     android:viewportHeight="24">
     <!--
-        Updated notification icon compliant with system icons guidelines
+        WizkTerm notification icon: rounded ">_" prompt mark matching the
+        launcher icon, compliant with system icons guidelines
         https://material.io/design/iconography/system-icons.html
+        White silhouette only, tinted by the system.
     -->
 
-    <group>
-        <clip-path
-            android:pathData="M0,0h24v24h-24z"/>
+    <path
+        android:pathData="M5.5,5 L11.5,12 L5.5,19"
+        android:strokeColor="#ffffff"
+        android:strokeWidth="2.4"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"
+        android:fillColor="#00000000"/>
 
-        <path
-            android:pathData="M5,4H2L8,12L2,20H5L11,12L5,4Z"
-            android:fillColor="#ffffff"/>
+    <path
+        android:pathData="M14,18.5 H21"
+        android:strokeColor="#ffffff"
+        android:strokeWidth="2.4"
+        android:strokeLineCap="round"
+        android:fillColor="#00000000"/>
 
-        <path
-            android:pathData="M13,18H22V20H13V18Z"
-            android:fillColor="#ffffff"/>
-
-    </group>
 </vector>
