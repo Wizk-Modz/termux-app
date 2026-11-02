@@ -19,6 +19,7 @@ local.properties
 
 # Signing files
 .signing/
+app/wizk.keystore
 
 # Intellij
 .idea/

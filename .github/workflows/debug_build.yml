@@ -31,6 +31,9 @@ jobs:
         shell: bash {0}
         env:
           PACKAGE_VARIANT: ${{ matrix.package_variant }}
+          WIZK_KEYSTORE_BASE64: ${{ secrets.WIZK_KEYSTORE_BASE64 }}
+          TERMUX_RELEASE_STORE_PASSWORD: ${{ secrets.TERMUX_RELEASE_STORE_PASSWORD }}
+          TERMUX_RELEASE_KEY_PASSWORD: ${{ secrets.TERMUX_RELEASE_KEY_PASSWORD }}
         run: |
           exit_on_error() { echo "$1"; exit 1; }
 
@@ -38,6 +41,9 @@ jobs:
 
           if [ "$GITHUB_EVENT_NAME" == "pull_request" ]; then
               GITHUB_SHA="${{ github.event.pull_request.head.sha }}" # Do not use last merge commit set in GITHUB_SHA
+              BUILD_TYPE="debug"
+          else
+              BUILD_TYPE="release"
           fi
 
           # Set RELEASE_VERSION_NAME to "<CURRENT_VERSION_NAME>+<last_commit_hash>"
@@ -48,8 +54,15 @@ jobs:
            exit_on_error "The versionName '${RELEASE_VERSION_NAME/v/}' is not a valid version as per semantic version '2.0.0' spec in the format 'major.minor.patch(-prerelease)(+buildmetadata)'. https://semver.org/spec/v2.0.0.html."
           fi
 
-          APK_DIR_PATH="./app/build/outputs/apk/debug"
-          APK_VERSION_TAG="$RELEASE_VERSION_NAME-${{ env.PACKAGE_VARIANT }}-github-debug" # Note the "-", GITHUB_SHA will already have "+" before it
+          if [ "$BUILD_TYPE" == "release" ]; then
+              if [ -z "$WIZK_KEYSTORE_BASE64" ] || [ -z "$TERMUX_RELEASE_STORE_PASSWORD" ] || [ -z "$TERMUX_RELEASE_KEY_PASSWORD" ]; then
+                  exit_on_error "Missing release signing secrets."
+              fi
+              printf '%s' "$WIZK_KEYSTORE_BASE64" | base64 -d > app/wizk.keystore
+          fi
+
+          APK_DIR_PATH="./app/build/outputs/apk/$BUILD_TYPE"
+          APK_VERSION_TAG="$RELEASE_VERSION_NAME-${{ env.PACKAGE_VARIANT }}-github-$BUILD_TYPE" # Note the "-", GITHUB_SHA will already have "+" before it
           APK_BASENAME_PREFIX="termux-app_$APK_VERSION_TAG"
 
           # Used by attachment steps later
@@ -57,12 +70,19 @@ jobs:
           echo "APK_VERSION_TAG=$APK_VERSION_TAG" >> $GITHUB_ENV
           echo "APK_BASENAME_PREFIX=$APK_BASENAME_PREFIX" >> $GITHUB_ENV
 
-          echo "Building APKs for 'APK_VERSION_TAG' build"
+          echo "Building APKs for '$APK_VERSION_TAG' build"
           export TERMUX_APP_VERSION_NAME="${RELEASE_VERSION_NAME/v/}" # Used by app/build.gradle
           export TERMUX_APK_VERSION_TAG="$APK_VERSION_TAG" # Used by app/build.gradle
           export TERMUX_PACKAGE_VARIANT="${{ env.PACKAGE_VARIANT }}" # Used by app/build.gradle
-          if ! ./gradlew assembleDebug; then
-            exit_on_error "Build failed for '$APK_VERSION_TAG' build."
+          if [ "$BUILD_TYPE" == "release" ]; then
+            export TERMUX_SPLIT_APKS_FOR_RELEASE_BUILDS=1 # Used by app/build.gradle
+            if ! ./gradlew assembleRelease; then
+              exit_on_error "Build failed for '$APK_VERSION_TAG' build."
+            fi
+          else
+            if ! ./gradlew assembleDebug; then
+              exit_on_error "Build failed for '$APK_VERSION_TAG' build."
+            fi
           fi
 
           echo "Validating APKs"
