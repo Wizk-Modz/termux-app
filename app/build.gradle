@@ -12,6 +12,19 @@ ext {
     packageVariant = System.getenv("TERMUX_PACKAGE_VARIANT") ?: "apt-android-7" // Default: "apt-android-7"
 }
 
+// Release signing credentials are read from local.properties or environment variables
+def signingProperties = new Properties()
+def signingPropertiesFile = rootProject.file("local.properties")
+if (signingPropertiesFile.exists()) {
+    signingPropertiesFile.withInputStream { signingProperties.load(it) }
+}
+def releaseStorePassword = System.getenv("TERMUX_RELEASE_STORE_PASSWORD") ?: signingProperties.getProperty("TERMUX_RELEASE_STORE_PASSWORD")
+def releaseKeyPassword = System.getenv("TERMUX_RELEASE_KEY_PASSWORD") ?: signingProperties.getProperty("TERMUX_RELEASE_KEY_PASSWORD")
+def releaseSigningConfigured = releaseStorePassword && releaseKeyPassword
+if (!releaseSigningConfigured && gradle.startParameter.taskNames.any { it.toLowerCase().contains("release") }) {
+    throw new GradleException("Missing release signing credentials. Set TERMUX_RELEASE_STORE_PASSWORD and TERMUX_RELEASE_KEY_PASSWORD in local.properties or environment variables.")
+}
+
 android {
     namespace "com.termux"
 
@@ -84,6 +97,15 @@ android {
             storePassword 'xrj45yWGLbsO7W0v'
             keyPassword 'xrj45yWGLbsO7W0v'
         }
+
+        if (releaseSigningConfigured) {
+            release {
+                storeFile file('wizk.keystore')
+                keyAlias 'chuong'
+                storePassword releaseStorePassword
+                keyPassword releaseKeyPassword
+            }
+        }
     }
 
     buildTypes {
@@ -91,6 +113,10 @@ android {
             minifyEnabled true
             shrinkResources false // Reproducible builds
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+
+            if (releaseSigningConfigured) {
+                signingConfig signingConfigs.release
+            }
         }
 
         debug {
